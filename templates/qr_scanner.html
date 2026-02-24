@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code Scanner - Phishing Detection{% endblock %}
+
+{% block extra_css %}
+<style>
+.qr-upload-area {
+    border: 3px dashed #6c757d;
+    border-radius: 15px;
+    padding: 40px;
+    text-align: center;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.qr-upload-area:hover {
+    border-color: #0d6efd;
+    background: #e7f1ff;
+}
+.qr-upload-area.dragover {
+    border-color: #0d6efd;
+    background: #e7f1ff;
+    transform: scale(1.02);
+}
+.qr-result-card {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.qr-data-box {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+.status-badge {
+    font-size: 1.1rem;
+    padding: 10px 20px;
+    border-radius: 25px;
+}
+.qr-preview-img {
+    max-height: 250px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-5 fw-bold text-info">
+                <i class="bi bi-qr-code-scan"></i> QR Code Scanner
+            </h1>
+            <p class="lead text-muted">Decode QR codes and verify embedded URLs for safety</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Upload Section -->
+            {% if not result %}
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-gradient-info text-white py-3" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                    <h4 class="mb-0">
+                        <i class="bi bi-upload"></i> Upload QR Code
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('qr_scanner') }}" enctype="multipart/form-data" id="qrForm">
+                        <div class="qr-upload-area mb-4" id="dropZone">
+                            <i class="bi bi-qr-code display-1 text-muted mb-3"></i>
+                            <h5>Drag & Drop QR Code Image</h5>
+                            <p class="text-muted mb-3">or click to browse</p>
+                            <input type="file" class="form-control d-none" id="qr_image" 
+                                   name="qr_image" accept="image/*" required>
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('qr_image').click()">
+                                <i class="bi bi-folder-open"></i> Choose File
+                            </button>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <div class="text-center mb-4" id="imagePreviewContainer" style="display: none;">
+                            <h6 class="text-muted mb-3">Preview:</h6>
+                            <img id="imagePreview" src="" alt="QR Code Preview" class="qr-preview-img">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-info btn-lg w-100" id="scanBtn" disabled>
+                            <i class="bi bi-qr-code-scan"></i> Scan QR Code
+                        </button>
+                    </form>
+
+                    <!-- Security Notice -->
+                    <div class="alert alert-warning mt-4 border-0" style="background: #fff3cd;">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-shield-exclamation"></i> Security Notice
+                        </h6>
+                        <p class="mb-0 small">
+                            QR codes can contain malicious URLs. Always verify the destination before visiting. 
+                            Cybercriminals often use QR codes in phishing campaigns, parking payment scams, and fake login pages.
+                        </p>
+                    </div>
+
+                    <!-- Supported Formats -->
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-2"><i class="bi bi-info-circle"></i> Supported Formats</h6>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge bg-secondary">PNG</span>
+                            <span class="badge bg-secondary">JPG</span>
+                            <span class="badge bg-secondary">JPEG</span>
+                            <span class="badge bg-secondary">GIF</span>
+                            <span class="badge bg-secondary">BMP</span>
+                            <span class="badge bg-secondary">WEBP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if result %}
+            <!-- Results Section -->
+            <div class="card qr-result-card border-0">
+                <div class="card-header bg-gradient-info text-white py-3" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                    <h4 class="mb-0">
+                        <i class="bi bi-check-circle"></i> QR Code Decoded
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <!-- QR Data Display -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2"><i class="bi bi-upc-scan"></i> Decoded Data</h6>
+                        <div class="qr-data-box">
+                            {{ result.qr_data }}
+                        </div>
+                    </div>
+
+                    {% if result.is_url %}
+                    <!-- URL Analysis Result -->
+                    <div class="text-center mb-4">
+                        {% if result.url_result == 'phishing' %}
+                        <div class="alert alert-danger border-0 shadow-sm">
+                            <i class="bi bi-exclamation-triangle-fill display-4 d-block mb-2"></i>
+                            <h4 class="alert-heading">Phishing URL Detected!</h4>
+                            <p class="mb-0">This QR code contains a malicious URL. Do not visit this website!</p>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success border-0 shadow-sm">
+                            <i class="bi bi-check-circle-fill display-4 d-block mb-2"></i>
+                            <h4 class="alert-heading">URL Appears Safe</h4>
+                            <p class="mb-0">This QR code contains a legitimate URL.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Confidence Bar -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Detection Confidence</label>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated
+                                        {{ 'bg-danger' if result.url_result == 'phishing' else 'bg-success' }}" 
+                                 role="progressbar" 
+                                 style="width: {{ result.confidence }}%">
+                                {{ "%.1f"|format(result.confidence) }}%
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL Display -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2"><i class="bi bi-link-45deg"></i> URL</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ result.qr_data }}" readonly id="urlText">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyUrl()">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Warning for Phishing -->
+                    {% if result.url_result == 'phishing' %}
+                    <div class="alert alert-danger border-0">
+                        <h6 class="alert-heading"><i class="bi bi-shield-exclamation"></i> Warning</h6>
+                        <p class="mb-0">
+                            This URL has been identified as a phishing attempt. Visiting this site could result in:
+                        </p>
+                        <ul class="mb-0 mt-2">
+                            <li>Theft of personal information</li>
+                            <li>Account compromise</li>
+                            <li>Malware infection</li>
+                            <li>Financial loss</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <!-- Non-URL Content -->
+                    <div class="alert alert-info border-0 shadow-sm">
+                        <i class="bi bi-info-circle-fill display-4 d-block mb-2"></i>
+                        <h4 class="alert-heading">Non-URL Content</h4>
+                        <p class="mb-0">
+                            This QR code does not contain a URL. It may contain text, contact information, 
+                            WiFi credentials, or other data types.
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('qr_scanner') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-arrow-clockwise"></i> Scan Another QR Code
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- How It Works -->
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> How It Works</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <strong>1</strong>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Upload Image</h6>
+                                    <p class="small text-muted mb-0">Upload a clear image of the QR code.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <strong>2</strong>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Decode</h6>
+                                    <p class="small text-muted mb-0">Our system decodes the QR code using computer vision.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <strong>3</strong>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Analyze URL</h6>
+                                    <p class="small text-muted mb-0">If it contains a URL, we analyze it for phishing.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <strong>4</strong>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Get Results</h6>
+                                    <p class="small text-muted mb-0">View safety assessment and confidence score.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// File input and preview handling
+const fileInput = document.getElementById('qr_image');
+const dropZone = document.getElementById('dropZone');
+const previewContainer = document.getElementById('imagePreviewContainer');
+const previewImg = document.getElementById('imagePreview');
+const scanBtn = document.getElementById('scanBtn');
+
+// File selection
+fileInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        showPreview(file);
+    }
+});
+
+// Drag and drop
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        showPreview(files[0]);
+    }
+});
+
+function showPreview(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        previewContainer.style.display = 'block';
+        scanBtn.disabled = false;
+        scanBtn.innerHTML = '<i class="bi bi-qr-code-scan"></i> Scan QR Code';
+    }
+    reader.readAsDataURL(file);
+}
+
+function copyUrl() {
+    const urlText = document.getElementById('urlText');
+    urlText.select();
+    urlText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(urlText.value).then(function() {
+        alert('URL copied to clipboard!');
+    });
+}
+</script>
+{% endblock %}

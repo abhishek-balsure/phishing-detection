@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Settings - ShieldGuard Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        padding: 50px 0;
+        margin-bottom: -30px;
+    }
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        margin: 0 auto;
+    }
+    .settings-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    .settings-card .nav-link {
+        border-radius: 10px;
+        padding: 12px 20px;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    .settings-card .nav-link.active {
+        background: var(--primary-gradient);
+        color: white;
+    }
+    .settings-card .nav-link:hover:not(.active) {
+        background: rgba(102, 126, 234, 0.1);
+    }
+    .form-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+    .stat-box {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+    }
+    .stat-box h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .danger-zone {
+        border: 2px solid #ff6b6b;
+        border-radius: 15px;
+        background: rgba(255, 107, 107, 0.05);
+    }
+    .danger-zone .card-header {
+        background: rgba(255, 107, 107, 0.1);
+        color: #ff6b6b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 text-center">
+                <div class="profile-avatar mb-3">
+                    {{ user.username[0]|upper }}
+                </div>
+                <h3 class="text-white mb-1">{{ user.username }}</h3>
+                <span class="badge bg-light text-dark">{{ user.email }}</span>
+                {% if user.is_admin %}
+                <span class="badge bg-warning ms-2">Admin</span>
+                {% endif %}
+            </div>
+            <div class="col-md-8">
+                <div class="row mt-4">
+                    <div class="col-4">
+                        <div class="stat-box">
+                            <h3>{{ stats.total_scans }}</h3>
+                            <small class="text-muted">Total Scans</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-box">
+                            <h3>{{ stats.phishing_count }}</h3>
+                            <small class="text-muted">Phishing Found</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-box">
+                            <h3>{{ stats.safe_count }}</h3>
+                            <small class="text-muted">Safe URLs</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <div class="settings-card card">
+                <div class="card-body p-2">
+                    <div class="nav flex-column">
+                        <a class="nav-link active" href="#profile-settings" data-bs-toggle="tab">
+                            <i class="bi bi-person me-2"></i> Profile
+                        </a>
+                        <a class="nav-link" href="#security" data-bs-toggle="tab">
+                            <i class="bi bi-shield-lock me-2"></i> Security
+                        </a>
+                        <a class="nav-link" href="#bookmarks" data-bs-toggle="tab">
+                            <i class="bi bi-bookmark me-2"></i> Bookmarks
+                        </a>
+                        <a class="nav-link" href="#activity" data-bs-toggle="tab">
+                            <i class="bi bi-clock-history me-2"></i> Activity
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="tab-content">
+                <!-- Profile Settings -->
+                <div class="tab-pane fade show active" id="profile-settings">
+                    <div class="settings-card card">
+                        <div class="card-header bg-transparent">
+                            <h5 class="mb-0"><i class="bi bi-person-circle text-primary me-2"></i>Profile Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <input type="hidden" name="action" value="update_profile">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Username</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                            <input type="text" name="username" class="form-control" value="{{ user.username }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Email Address</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                            <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Member Since</label>
+                                    <input type="text" class="form-control" value="{{ user.created_at }}" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Last Login</label>
+                                    <input type="text" class="form-control" value="{{ user.last_login or 'Never' }}" readonly>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>Save Changes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Security -->
+                <div class="tab-pane fade" id="security">
+                    <div class="settings-card card mb-4">
+                        <div class="card-header bg-transparent">
+                            <h5 class="mb-0"><i class="bi bi-key text-warning me-2"></i>Change Password</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <input type="hidden" name="action" value="change_password">
+                                <div class="mb-3">
+                                    <label class="form-label">Current Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                        <input type="password" name="current_password" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">New Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                        <input type="password" name="new_password" class="form-control" required minlength="8">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                        <input type="password" name="confirm_password" class="form-control" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-arrow-repeat me-2"></i>Change Password
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-card card danger-zone">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Danger Zone</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6>Delete Account</h6>
+                            <p class="text-muted small">Once you delete your account, there is no going back. Please be certain.</p>
+                            <button class="btn btn-danger btn-sm" onclick="alert('Please contact admin to delete account')">
+                                <i class="bi bi-trash me-2"></i>Delete My Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bookmarks -->
+                <div class="tab-pane fade" id="bookmarks">
+                    <div class="settings-card card">
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-bookmark-heart text-danger me-2"></i>Saved Bookmarks</h5>
+                            <a href="{{ url_for('bookmarks') }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-collection me-2"></i>View All
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_bookmarks %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>URL</th>
+                                            <th>Result</th>
+                                            <th>Confidence</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for bm in recent_bookmarks %}
+                                        <tr>
+                                            <td>
+                                                <code class="text-break">{{ bm.url[:40] }}{% if bm.url|length > 40 %}...{% endif %}</code>
+                                            </td>
+                                            <td>
+                                                <span class="badge {{ 'bg-danger' if bm.result == 'phishing' else 'bg-success' }}">
+                                                    {{ bm.result }}
+                                                </span>
+                                            </td>
+                                            <td>{{ "%.0f"|format(bm.confidence) }}%</td>
+                                            <td>{{ bm.created_at[:10] }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-bookmark display-4 text-muted"></i>
+                                <p class="text-muted mt-3">No bookmarks yet. Save URLs while scanning!</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Activity -->
+                <div class="tab-pane fade" id="activity">
+                    <div class="settings-card card">
+                        <div class="card-header bg-transparent">
+                            <h5 class="mb-0"><i class="bi bi-graph-up text-success me-2"></i>Recent Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_scans %}
+                            <div class="timeline">
+                                {% for scan in recent_scans %}
+                                <div class="d-flex mb-3">
+                                    <div class="me-3">
+                                        <div class="rounded-circle bg-{{ 'danger' if scan.result == 'phishing' else 'success' }}" 
+                                             style="width: 12px; height: 12px; margin-top: 6px;"></div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>{{ scan.result|title }}</strong>
+                                            <small class="text-muted">{{ scan.created_at }}</small>
+                                        </div>
+                                        <code class="small">{{ scan.url[:50] }}{% if scan.url|length > 50 %}...{% endif %}</code>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center">No recent activity</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

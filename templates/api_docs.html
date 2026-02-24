@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation - Phishing Detection{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card mt-4">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-code-square"></i> API Documentation
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="lead">
+                        Integrate phishing detection into your applications using our RESTful API.
+                    </p>
+
+                    {% if session.user_id %}
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-key"></i> Your API Key:</h6>
+                        <code class="h5 user-select-all d-block bg-light p-2 rounded">{{ api_key }}</code>
+                        <small class="text-muted">Keep this key secure and do not share it publicly.</small>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i>
+                        <a href="{{ url_for('login') }}">Login</a> or <a href="{{ url_for('signup') }}">sign up</a> 
+                        to get your API key.
+                    </div>
+                    {% endif %}
+
+                    <!-- Rate Limiting -->
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-speedometer"></i> Rate Limiting</h6>
+                        <p class="mb-0">100 requests per hour per API key. Exceeding this limit will return a 429 error.</p>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Endpoint 1: Check Single URL -->
+                    <div class="mb-5">
+                        <h4>1. Check Single URL</h4>
+                        <p>Analyze a single URL for phishing indicators.</p>
+                        
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <code>POST /api/check_url</code>
+                            </div>
+                            <div class="card-body">
+                                <h6>Request Body:</h6>
+                                <pre class="bg-dark text-light p-3 rounded"><code>{
+  "url": "https://example.com",
+  "api_key": "your-api-key-here"
+}</code></pre>
+
+                                <h6 class="mt-3">Response:</h6>
+                                <pre class="bg-dark text-light p-3 rounded"><code>{
+  "url": "https://example.com",
+  "prediction": "legitimate",
+  "confidence": 95.5,
+  "timestamp": "2024-01-15T10:30:00"
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-3">Example (cURL):</h6>
+                        <pre class="bg-dark text-light p-3 rounded"><code>curl -X POST http://localhost:5000/api/check_url \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com",
+    "api_key": "your-api-key-here"
+  }'</code></pre>
+
+                        <h6 class="mt-3">Example (Python):</h6>
+                        <pre class="bg-dark text-light p-3 rounded"><code>import requests
+
+response = requests.post('http://localhost:5000/api/check_url', json={
+    'url': 'https://example.com',
+    'api_key': 'your-api-key-here'
+})
+
+result = response.json()
+print(f"Prediction: {result['prediction']}")
+print(f"Confidence: {result['confidence']}%")</code></pre>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Endpoint 2: Batch Check -->
+                    <div class="mb-5">
+                        <h4>2. Batch Check URLs</h4>
+                        <p>Analyze multiple URLs at once (up to 100 per request).</p>
+                        
+                        <div class="card bg-light">
+                            <div class="card-header">
+                                <code>POST /api/batch_check</code>
+                            </div>
+                            <div class="card-body">
+                                <h6>Request Body:</h6>
+                                <pre class="bg-dark text-light p-3 rounded"><code>{
+  "urls": [
+    "https://example.com",
+    "https://suspicious-site.tk",
+    "https://google.com"
+  ],
+  "api_key": "your-api-key-here"
+}</code></pre>
+
+                                <h6 class="mt-3">Response:</h6>
+                                <pre class="bg-dark text-light p-3 rounded"><code>{
+  "results": [
+    {
+      "url": "https://example.com",
+      "prediction": "legitimate",
+      "confidence": 95.5
+    },
+    {
+      "url": "https://suspicious-site.tk",
+      "prediction": "phishing",
+      "confidence": 92.3
+    }
+  ],
+  "total": 2,
+  "timestamp": "2024-01-15T10:30:00"
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-3">Example (cURL):</h6>
+                        <pre class="bg-dark text-light p-3 rounded"><code>curl -X POST http://localhost:5000/api/batch_check \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": [
+      "https://example.com",
+      "https://google.com"
+    ],
+    "api_key": "your-api-key-here"
+  }'</code></pre>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Error Responses -->
+                    <div class="mb-5">
+                        <h4>Error Responses</h4>
+                        <table class="table table-bordered">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Status Code</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>400</code></td>
+                                    <td>Bad Request - Missing required fields</td>
+                                </tr>
+                                <tr>
+                                    <td><code>401</code></td>
+                                    <td>Unauthorized - Invalid API key</td>
+                                </tr>
+                                <tr>
+                                    <td><code>429</code></td>
+                                    <td>Too Many Requests - Rate limit exceeded</td>
+                                </tr>
+                                <tr>
+                                    <td><code>500</code></td>
+                                    <td>Internal Server Error</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Support -->
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-question-circle"></i> Need Help?</h6>
+                        <p class="mb-0">
+                            For API support or questions, please contact the administrator or 
+                            visit our <a href="{{ url_for('index') }}">main application</a>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

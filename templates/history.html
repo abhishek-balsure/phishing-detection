@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Scan History - Phishing Detection{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap">
+                    <h4 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Scan History
+                    </h4>
+                    <div class="d-flex gap-2 mt-2 mt-sm-0">
+                        <a href="{{ url_for('export_history_csv') }}" class="btn btn-sm btn-success">
+                            <i class="bi bi-download"></i> Export CSV
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Search and Filter -->
+                    <form method="GET" action="{{ url_for('history') }}" class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" name="search" 
+                                       placeholder="Search URLs..." value="{{ search or '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" name="filter">
+                                <option value="all" {% if filter_type == 'all' %}selected{% endif %}>All Results</option>
+                                <option value="phishing" {% if filter_type == 'phishing' %}selected{% endif %}>Phishing Only</option>
+                                <option value="legitimate" {% if filter_type == 'legitimate' %}selected{% endif %}>Safe Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-funnel"></i> Filter
+                            </button>
+                        </div>
+                    </form>
+
+                    {% if scans %}
+                    <!-- Results Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>URL</th>
+                                    <th>Result</th>
+                                    <th>Confidence</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for scan in scans %}
+                                <tr>
+                                    <td style="max-width: 350px;">
+                                        <code class="text-break" title="{{ scan.url }}">
+                                            {{ scan.url[:60] }}{% if scan.url|length > 60 %}...{% endif %}
+                                        </code>
+                                    </td>
+                                    <td>
+                                        {% if scan.result == 'phishing' %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-exclamation-triangle"></i> Phishing
+                                        </span>
+                                        {% elif scan.result == 'legitimate' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Safe
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-question-circle"></i> Unknown
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 25px; min-width: 100px;">
+                                            {% if scan.result == 'phishing' %}
+                                            <div class="progress-bar bg-danger" role="progressbar" 
+                                                 style="width: {{ scan.confidence }}%">
+                                                {{ "%.1f"|format(scan.confidence) }}%
+                                            </div>
+                                            {% else %}
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ scan.confidence }}%">
+                                                {{ "%.1f"|format(scan.confidence) }}%
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ scan.scan_type }}</span>
+                                    </td>
+                                    <td>{{ scan.created_at }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if total_pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('history', page=page-1, search=search, filter=filter_type) }}">
+                                    Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for p in range(1, total_pages + 1) %}
+                                {% if p == page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ p }}</span>
+                                </li>
+                                {% elif p <= 3 or p > total_pages - 3 or (p >= page - 1 and p <= page + 1) %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('history', page=p, search=search, filter=filter_type) }}">
+                                        {{ p }}
+                                    </a>
+                                </li>
+                                {% elif p == 4 or p == total_pages - 3 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page < total_pages %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('history', page=page+1, search=search, filter=filter_type) }}">
+                                    Next
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                    <div class="text-center text-muted mt-3">
+                        <small>Showing {{ scans|length }} of {{ total }} results</small>
+                    </div>
+
+                    {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox display-1"></i>
+                        <h5 class="mt-3">No scans found</h5>
+                        <p>
+                            {% if search %}
+                            No results match your search criteria.
+                            {% else %}
+                            You haven't performed any scans yet.
+                            {% endif %}
+                        </p>
+                        <a href="{{ url_for('check_url') }}" class="btn btn-primary">
+                            <i class="bi bi-shield-check"></i> Start Scanning
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

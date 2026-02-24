@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Email Scanner - Phishing Detection{% endblock %}
+
+{% block extra_css %}
+<style>
+.email-result-card {
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+}
+.email-result-card.safe {
+    border-left-color: #28a745;
+}
+.email-result-card.suspicious {
+    border-left-color: #dc3545;
+}
+.email-result-card.warning {
+    border-left-color: #ffc107;
+}
+.url-result-item {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: transform 0.2s;
+}
+.url-result-item:hover {
+    transform: translateX(5px);
+}
+.url-result-item.safe {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #28a745;
+}
+.url-result-item.phishing {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border: 1px solid #dc3545;
+}
+.confidence-badge {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-5 fw-bold text-primary">
+                <i class="bi bi-envelope-paper-fill"></i> Email Scanner
+            </h1>
+            <p class="lead text-muted">Analyze emails to detect phishing URLs and malicious content</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Scan Form -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-gradient-warning text-dark py-3" style="background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);">
+                    <h4 class="mb-0">
+                        <i class="bi bi-envelope-check"></i> Scan Email Content
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('email_scanner') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="sender" class="form-label fw-bold">
+                                    <i class="bi bi-person"></i> Sender (Optional)
+                                </label>
+                                <input type="email" class="form-control" id="sender" name="sender"
+                                       placeholder="sender@example.com" value="{{ request.form.sender if request.form else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="subject" class="form-label fw-bold">
+                                    <i class="bi bi-card-heading"></i> Subject (Optional)
+                                </label>
+                                <input type="text" class="form-control" id="subject" name="subject"
+                                       placeholder="Email subject line" value="{{ request.form.subject if request.form else '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="content" class="form-label fw-bold">
+                                <i class="bi bi-file-text"></i> Email Content
+                            </label>
+                            <textarea class="form-control" id="content" name="content" rows="10" required
+                                      placeholder="Paste the full email content here including any links...">{{ request.form.content if request.form else '' }}</textarea>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> We'll automatically extract and analyze all URLs found in the text.
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-warning btn-lg w-100">
+                            <i class="bi bi-shield-check"></i> Scan for Phishing
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if result %}
+            <!-- Results Section -->
+            <div class="card shadow-lg border-0 email-result-card {{ result.overall_result }}">
+                <div class="card-header py-3">
+                    <h4 class="mb-0">
+                        {% if result.overall_result == 'suspicious' %}
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i> 
+                        <span class="text-danger">Suspicious Content Detected!</span>
+                        {% elif result.overall_result == 'safe' %}
+                        <i class="bi bi-check-circle-fill text-success"></i> 
+                        <span class="text-success">No Threats Detected</span>
+                        {% else %}
+                        <i class="bi bi-info-circle-fill text-info"></i> 
+                        <span class="text-info">No URLs Found</span>
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Summary Stats -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-light border-0">
+                                <div class="card-body text-center">
+                                    <h2 class="text-primary mb-0">{{ result.urls_found }}</h2>
+                                    <small class="text-muted">URLs Found</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-danger text-white border-0">
+                                <div class="card-body text-center">
+                                    <h2 class="mb-0">{{ result.malicious_urls }}</h2>
+                                    <small>Malicious URLs</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white border-0">
+                                <div class="card-body text-center">
+                                    <h2 class="mb-0">{{ result.urls_found - result.malicious_urls }}</h2>
+                                    <small>Safe URLs</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL Analysis Results -->
+                    {% if result.url_results %}
+                    <h5 class="mb-3">
+                        <i class="bi bi-list-check"></i> URL Analysis Results
+                    </h5>
+                    <div class="url-results-list">
+                        {% for url_item in result.url_results %}
+                        <div class="url-result-item {{ url_item.result }}">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap">
+                                <div class="flex-grow-1 me-3" style="min-width: 300px;">
+                                    <code class="text-break small">{{ url_item.url }}</code>
+                                </div>
+                                <div class="text-end">
+                                    {% if url_item.result == 'phishing' %}
+                                    <span class="badge bg-danger confidence-badge">
+                                        <i class="bi bi-exclamation-triangle"></i> Phishing
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-success confidence-badge">
+                                        <i class="bi bi-check-circle"></i> Safe
+                                    </span>
+                                    {% endif %}
+                                    <div class="mt-1 small">
+                                        Confidence: {{ "%.1f"|format(url_item.confidence) }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Recommendations -->
+                    <div class="alert {{ 'alert-danger' if result.overall_result == 'suspicious' else 'alert-success' }} mt-4">
+                        <h6><i class="bi bi-lightbulb"></i> Recommendation</h6>
+                        {% if result.overall_result == 'suspicious' %}
+                        <p class="mb-0">
+                            <strong>Warning:</strong> This email contains potentially malicious URLs. 
+                            Do not click on any links. Delete this email immediately and report it as phishing.
+                        </p>
+                        {% elif result.overall_result == 'safe' %}
+                        <p class="mb-0">
+                            <strong>Safe:</strong> All URLs in this email appear to be legitimate. 
+                            However, always verify the sender before taking any action.
+                        </p>
+                        {% else %}
+                        <p class="mb-0">
+                            No URLs were found in this email content. The email may be safe, 
+                            but always verify the sender's identity.
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Instructions Card -->
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> How to Use</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <strong>1</strong>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Copy Email Content</h6>
+                                    <p class="small text-muted mb-0">Copy the full email text including all links and paste it above.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <strong>2</strong>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Auto URL Extraction</h6>
+                                    <p class="small text-muted mb-0">Our system automatically finds and extracts all URLs from the text.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <strong>3</strong>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>ML Analysis</h6>
+                                    <p class="small text-muted mb-0">Each URL is analyzed using our ML model with 25+ detection features.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <strong>4</strong>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6>Get Results</h6>
+                                    <p class="small text-muted mb-0">View detailed results showing which URLs are safe or phishing.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

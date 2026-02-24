@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}ShieldGuard Pro - Premium Phishing Protection{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 80px 0;
+    margin-bottom: 0;
+}
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+}
+.hero-subtitle {
+    font-size: 1.25rem;
+    opacity: 0.95;
+    margin-bottom: 2rem;
+}
+.quick-check-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.feature-icon {
+    font-size: 3rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+.feature-card {
+    border: none;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+.feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+.stat-number {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #667eea;
+}
+.stat-label {
+    font-size: 1.1rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+.cta-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <h1 class="hero-title">Premium Phishing Protection</h1>
+                <p class="hero-subtitle">
+                    ShieldGuard Pro uses advanced AI and machine learning to detect phishing attacks. 
+                    Analyze URLs, scan emails, and decode QR codes instantly with 95%+ accuracy.
+                </p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{{ url_for('check_url') }}" class="btn btn-light btn-lg px-4">
+                        <i class="bi bi-shield-check"></i> Start Scanning
+                    </a>
+                    <a href="{{ url_for('api_docs') }}" class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-code-square"></i> API Access
+                    </a>
+                </div>
+                
+                <!-- Stats -->
+                <div class="row mt-5 text-center">
+                    <div class="col-4">
+                        <div class="fs-2 fw-bold">{{ total_scans or 0 }}</div>
+                        <small class="opacity-75">Total Scans</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-2 fw-bold">{{ total_users or 0 }}</div>
+                        <small class="opacity-75">Users</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-2 fw-bold">95%+</div>
+                        <small class="opacity-75">Accuracy</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <!-- Quick Check Form -->
+                <div class="quick-check-card">
+                    <h4 class="mb-3 text-dark">
+                        <i class="bi bi-search text-primary"></i> Quick URL Check
+                    </h4>
+                    <p class="text-muted small mb-3">Enter any URL below to instantly check if it's safe or a phishing attempt.</p>
+                    <form action="{{ url_for('quick_check') }}" method="POST">
+                        <div class="mb-3">
+                            <input type="url" name="url" class="form-control form-control-lg" 
+                                   placeholder="https://example.com" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                            <i class="bi bi-shield-check"></i> Check URL Now
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5 bg-light">
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold mb-3">Powerful Detection Features</h2>
+            <p class="lead text-muted">Multiple tools to keep you safe from phishing attacks</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="bi bi-link-45deg"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">URL Scanner</h5>
+                    <p class="card-text text-muted">
+                        Analyze individual URLs with 95%+ accuracy using 25+ ML detection features.
+                    </p>
+                    <a href="{{ url_for('check_url') }}" class="btn btn-outline-primary btn-sm">
+                        Try Now <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="bi bi-envelope"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Email Scanner</h5>
+                    <p class="card-text text-muted">
+                        Extract and analyze all URLs from suspicious emails automatically.
+                    </p>
+                    <a href="{{ url_for('email_scanner') }}" class="btn btn-outline-warning btn-sm">
+                        Try Now <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="bi bi-qr-code"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">QR Scanner</h5>
+                    <p class="card-text text-muted">
+                        Decode QR codes and verify embedded URLs for safety in seconds.
+                    </p>
+                    <a href="{{ url_for('qr_scanner') }}" class="btn btn-outline-info btn-sm">
+                        Try Now <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card text-center">
+                    <div class="feature-icon">
+                        <i class="bi bi-files"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Batch Check</h5>
+                    <p class="card-text text-muted">
+                        Upload CSV or text files to scan up to 100 URLs at once.
+                    </p>
+                    <a href="{{ url_for('batch_check') }}" class="btn btn-outline-success btn-sm">
+                        Try Now <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5">
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold mb-3">How It Works</h2>
+            <p class="lead text-muted">Three simple steps to protect yourself</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" 
+                     style="width: 80px; height: 80px;">
+                    <i class="bi bi-1-circle fs-1"></i>
+                </div>
+                <h4 class="fw-bold">Input URL</h4>
+                <p class="text-muted">Paste a URL, upload a file, or scan a QR code to get started.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" 
+                     style="width: 80px; height: 80px;">
+                    <i class="bi bi-2-circle fs-1"></i>
+                </div>
+                <h4 class="fw-bold">AI Analysis</h4>
+                <p class="text-muted">Our ML model analyzes 25+ features to detect phishing indicators.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" 
+                     style="width: 80px; height: 80px;">
+                    <i class="bi bi-3-circle fs-1"></i>
+                </div>
+                <h4 class="fw-bold">Get Results</h4>
+                <p class="text-muted">Receive instant results with confidence scores and detailed analysis.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="py-5 bg-light">
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold mb-3">Why Choose Our System?</h2>
+            <p class="lead text-muted">Trusted by users worldwide</p>
+        </div>
+        <div class="row text-center g-4">
+            <div class="col-md-3">
+                <div class="stat-number">95%+</div>
+                <div class="stat-label">Detection Accuracy</div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-number">25+</div>
+                <div class="stat-label">Detection Features</div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-number">&lt;2s</div>
+                <div class="stat-label">Response Time</div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Availability</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section py-5 text-white">
+    <div class="container py-5 text-center">
+        <h2 class="display-5 fw-bold mb-4">Ready to Start Protecting Yourself?</h2>
+        <p class="lead mb-4">Create a free account to access all features and keep track of your scans.</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{{ url_for('signup') }}" class="btn btn-light btn-lg px-5">
+                <i class="bi bi-person-plus"></i> Create Free Account
+            </a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-5">
+                <i class="bi bi-box-arrow-in-right"></i> Sign In
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

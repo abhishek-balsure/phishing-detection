@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Check URL - Phishing Detection{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mt-4 shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-link-45deg"></i> URL Scanner
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% if quick_check %}{{ url_for('quick_check') }}{% else %}{{ url_for('check_url') }}{% endif %}" id="urlCheckForm">
+                        <div class="mb-3">
+                            <label for="url" class="form-label">Enter URL to Check</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                                <input type="url" class="form-control" id="url" name="url" 
+                                       placeholder="https://example.com" required
+                                       {% if url %}value="{{ url }}"{% endif %}>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-shield-check"></i> Analyze URL
+                        </button>
+                    </form>
+
+                    {% if result %}
+                    <div class="result-section mt-4">
+                        <hr>
+                        <h5 class="mb-3">Analysis Result</h5>
+                        
+                        <!-- URL Display -->
+                        <div class="mb-3">
+                            <label class="form-label text-muted">URL Analyzed:</label>
+                            <div class="p-2 bg-light rounded">
+                                <code class="text-break">{{ url }}</code>
+                            </div>
+                        </div>
+
+                        <!-- Prediction Badge -->
+                        <div class="text-center mb-4">
+                            {% if result.is_phishing %}
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle-fill display-4 d-block mb-2"></i>
+                                <h4 class="alert-heading">Phishing Detected!</h4>
+                                <p class="mb-0">This URL appears to be a phishing attempt.</p>
+                                <hr>
+                                <p class="mb-0">
+                                    <strong>Confidence:</strong> {{ "%.1f"|format(result.confidence) }}%
+                                </p>
+                            </div>
+                            {% elif result.is_legitimate %}
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle-fill display-4 d-block mb-2"></i>
+                                <h4 class="alert-heading">URL is Safe</h4>
+                                <p class="mb-0">This URL appears to be legitimate.</p>
+                                <hr>
+                                <p class="mb-0">
+                                    <strong>Confidence:</strong> {{ "%.1f"|format(result.confidence) }}%
+                                </p>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-secondary">
+                                <i class="bi bi-question-circle-fill display-4 d-block mb-2"></i>
+                                <h4 class="alert-heading">Unable to Analyze</h4>
+                                <p class="mb-0">{{ result.error or 'An error occurred during analysis.' }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Confidence Bar -->
+                        {% if result.confidence %}
+                        <div class="mb-4">
+                            <label class="form-label">Confidence Score</label>
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated
+                                            {{ 'bg-danger' if result.is_phishing else 'bg-success' }}" 
+                                     role="progressbar" 
+                                     style="width: {{ result.confidence }}%">
+                                    {{ "%.1f"|format(result.confidence) }}%
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Features Table -->
+                        {% if result.features %}
+                        <div class="features-section">
+                            <h6 class="mb-3">Key Features Analyzed:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <tbody>
+                                        {% for key, value in result.features.items() %}
+                                        <tr>
+                                            <td class="text-muted" style="width: 50%;">
+                                                {{ key.replace('_', ' ').title() }}
+                                            </td>
+                                            <td class="text-end">
+                                                {% if value is number %}
+                                                    {{ "%.2f"|format(value) if value != value|int else value }}
+                                                {% else %}
+                                                    {{ value }}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="mt-4 text-center">
+                            <button type="button" class="btn btn-outline-primary" onclick="copyToClipboard('{{ url }}')">
+                                <i class="bi bi-clipboard"></i> Copy URL
+                            </button>
+                            <form method="POST" action="{{ url_for('add_bookmark') }}" class="d-inline">
+                                <input type="hidden" name="url" value="{{ url }}">
+                                <input type="hidden" name="result" value="{{ result.result }}">
+                                <input type="hidden" name="confidence" value="{{ result.confidence }}">
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="bi bi-bookmark-heart"></i> Bookmark
+                                </button>
+                            </form>
+                            <a href="{{ url_for('check_url') }}" class="btn btn-primary">
+                                <i class="bi bi-arrow-clockwise"></i> Check Another
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="card mt-4 shadow">
+                <div class="card-header bg-light">
+                    <i class="bi bi-lightbulb"></i> Tips to Identify Phishing
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Check for misspellings in the domain name
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Look for suspicious subdomains
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Verify the SSL certificate
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Be wary of urgency or threats in the message
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('URL copied to clipboard!');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
+{% endblock %}
