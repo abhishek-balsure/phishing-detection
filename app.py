@@ -715,6 +715,13 @@ def check_url():
     return render_template('check_url.html', result=result, url=url)
 
 
+@app.route('/scanner')
+@login_required
+def scanner():
+    """Unified scanner page with all scan types."""
+    return render_template('scanner.html')
+
+
 @app.route('/batch_check', methods=['GET', 'POST'])
 @login_required
 def batch_check():
